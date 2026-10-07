@@ -1,0 +1,26 @@
+apiVersion: tinkerbell.org/v1alpha1
+kind: Template
+metadata:
+  name: smoke
+  namespace: tinkerbell
+spec:
+  data: |
+    version: "0.1"
+    name: smoke
+    global_timeout: 1800
+    tasks:
+      - name: "smoke"
+        worker: "{{.device_1}}"
+        volumes:
+          - /dev:/dev
+        actions:
+          - name: "hello"
+            image: alpine:3.22
+            timeout: 600
+            command: ["sh", "-c", "echo hello from $(hostname); cat /proc/cmdline; ls -l /dev/vd*"]
+          # Writes a marker at sector 2048 so `lab.sh smoke` can check the
+          # disk from outside the VM.
+          - name: "write-disk"
+            image: alpine:3.22
+            timeout: 600
+            command: ["sh", "-c", "echo tinkerbell-lab-$(date +%s) | dd of=/dev/vda bs=512 seek=2048 conv=fsync && sync"]

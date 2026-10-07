@@ -1,0 +1,35 @@
+# Helm values for the kind lab. lab.sh sets publicIP, artifactsFileServer,
+# and the image on the command line because they depend on the kind network.
+#
+# Everything runs on hostNetwork so smee sits directly on the Docker "kind"
+# bridge, which is the L2 segment the QEMU machines share. kube-vip and the
+# macvlan init container are not needed in that setup.
+trustedProxies:
+  - 10.244.0.0/16
+deployment:
+  hostNetwork: true
+  # A hostNetwork pod holds its ports on the single node, so a rolling
+  # update's surge pod would never schedule.
+  strategy:
+    type: Recreate
+  imagePullPolicy: IfNotPresent
+  agentImage: ghcr.io/tinkerbell/tink-agent
+  agentImageTag: latest
+  init:
+    enabled: false
+  envs:
+    smee:
+      dhcpDefaultNameServers: ["1.1.1.1", "8.8.8.8"]
+service:
+  type: ClusterIP
+optional:
+  kubevip:
+    enabled: false
+  osie:
+    hostNetwork: true
+    deployment:
+      strategy:
+        type: Recreate
+  hookos:
+    arch: x86_64
+    kernelVersion: "6.6"
